@@ -52,13 +52,21 @@ install_pre_reqs() {
         handle_error "$?" "Failed to install packages"
     fi
 
-    mkdir -p /usr/share/keyrings
-    rm -f /usr/share/keyrings/nodesource.gpg
-    rm -f /etc/apt/sources.list.d/nodesource.list
+    if ! mkdir -p /usr/share/keyrings; then
+      handle_error "$?" "Makes sure the path /usr/share/keyrings exist or run ' mkdir -p /usr/share/keyrings' with sudo"
+    fi
 
-    # Run 'curl' and 'gpg'
+    rm -f /usr/share/keyrings/nodesource.gpg || true
+    rm -f /etc/apt/sources.list.d/nodesource.list || true
+
+    # Run 'curl' and 'gpg' to download and import the NodeSource signing key
     if ! curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg; then
       handle_error "$?" "Failed to download and import the NodeSource signing key"
+    fi
+
+    # Explicitly set the permissions to ensure the file is readable by all
+    if ! chmod 644 /usr/share/keyrings/nodesource.gpg; then
+        handle_error "$?" "Failed to set correct permissions on /usr/share/keyrings/nodesource.gpg"
     fi
 }
 
@@ -87,7 +95,10 @@ configure_repo() {
     if ! apt-get update -y; then
         handle_error "$?" "Failed to run 'apt-get update'"
     else
-        log "Repository configured successfully. To install Node.js, run: apt-get install nodejs -y" "success"
+        log "Repository configured successfully."
+        log "To install Node.js, run: apt-get install nodejs -y" "info"
+        log "You can use N|solid Runtime as a node.js alternative" "info"
+        log "To install N|solid Runtime, run: apt-get install nsolid -y \n" "success"
     fi
 }
 
